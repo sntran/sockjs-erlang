@@ -10,6 +10,7 @@
 
 main(_) ->
     Port = 8081,
+    application:start(ranch),
     application:start(sockjs),
     application:start(cowboy),
 
@@ -26,9 +27,8 @@ main(_) ->
     Routes = [{'_',  VhostRoutes}], % any vhost
 
     io:format(" [*] Running at http://localhost:~p~n", [Port]),
-    cowboy:start_listener(http, 100,
-                          cowboy_tcp_transport, [{port,     Port}],
-                          cowboy_http_protocol, [{dispatch, Routes}]),
+    cowboy:start_http(listener, 100, [{port, Port}],
+      [{dispatch, Routes}]),
     receive
         _ -> ok
     end.
@@ -39,18 +39,18 @@ init({_Any, http}, Req, []) ->
     {ok, Req, []}.
 
 handle(Req, State) ->
-    {Path, Req1} = cowboy_http_req:path(Req),
+    {Path, Req1} = cowboy_req:path(Req),
     {ok, Req2} = case Path of
                      [<<"multiplex.js">>] ->
                          {ok, Data} = file:read_file("./examples/multiplex/multiplex.js"),
-                         cowboy_http_req:reply(200, [{<<"Content-Type">>, "application/javascript"}],
+                         cowboy_req:reply(200, [{<<"Content-Type">>, "application/javascript"}],
                                                Data, Req1);
                      [] ->
                          {ok, Data} = file:read_file("./examples/multiplex/index.html"),
-                         cowboy_http_req:reply(200, [{<<"Content-Type">>, "text/html"}],
+                         cowboy_req:reply(200, [{<<"Content-Type">>, "text/html"}],
                                                Data, Req1);
                      _ ->
-                         cowboy_http_req:reply(404, [],
+                         cowboy_req:reply(404, [],
                                                <<"404 - Nothing here\n">>, Req1)
                  end,
     {ok, Req2, State}.

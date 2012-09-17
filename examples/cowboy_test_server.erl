@@ -42,9 +42,8 @@ main(_) ->
     Routes = [{'_',  VRoutes}], % any vhost
 
     io:format(" [*] Running at http://localhost:~p~n", [Port]),
-    cowboy:start_listener(http, 100,
-                          cowboy_tcp_transport, [{port,     Port}],
-                          cowboy_http_protocol, [{dispatch, Routes}]),
+    cowboy:start_http(listener, 100, 
+      [{port, Port}], [{dispatch, Routes}]),
     receive
         _ -> ok
     end.
@@ -55,7 +54,7 @@ init({_Any, http}, Req, []) ->
     {ok, Req, []}.
 
 handle(Req, State) ->
-    {ok, Req2} = cowboy_http_req:reply(404, [],
+    {ok, Req2} = cowboy_req:reply(404, [],
                  <<"404 - Nothing here (via sockjs-erlang fallback)\n">>, Req),
     {ok, Req2, State}.
 
