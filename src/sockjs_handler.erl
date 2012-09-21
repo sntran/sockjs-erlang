@@ -244,7 +244,7 @@ origin_allowed(Origin, Origins) ->
             RegEx = "^" ++ Allowed,
             RegEx1 = re:replace(RegEx, "\\*", ".*", [{return,list}]),
             RegEx2 = re:replace(RegEx1, "\\?", ".", [{return,list}]),
-            RegEx3 = [RegEx2|"$"],
+            RegEx3 = RegEx2 ++ "$",
             case re:run(Origin, RegEx3) of
                 nomatch -> false;
                 {match, _} -> true
