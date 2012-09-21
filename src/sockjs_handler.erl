@@ -22,6 +22,8 @@ init_state(Prefix, Callback, State, Options) ->
                  proplists:get_value(websocket, Options, true),
              cookie_needed =
                  proplists:get_value(cookie_needed, Options, false),
+            origins =
+                proplists:get_value(origins, Options, ["*"]), 
              disconnect_delay =
                  proplists:get_value(disconnect_delay, Options, 5000),
              heartbeat_delay =
@@ -180,9 +182,18 @@ handle({bad_method, Methods}, _Service, Req) ->
     sockjs_http:reply(405, H, "", Req);
 
 handle({match, {Type, Action, _Server, Session, Filters}}, Service, Req) ->
+    Origins = Service#service.origins,
+
     {Headers, Req2} = lists:foldl(
                         fun (Filter, {Headers0, Req1}) ->
-                                sockjs_filters:Filter(Req1, Headers0)
+                            {Origin, _Req} = sockjs_http:header('Origin', Req1),
+
+                            case {Filter, origin_allowed(Origin, Origins)} of
+                                {xhr_cors, false} ->
+                                    {Headers0, Req1};
+                                {_, _} ->
+                                    sockjs_filters:Filter(Req1, Headers0)
+                            end
                         end, {[], Req}, Filters),
     case Type of
         send ->
@@ -226,3 +237,16 @@ extract_info(Req) ->
       {sockname, Sock},
       {path, Path},
       {headers, Headers}], Req3}.
+
+origin_allowed(Origin, Origins) ->
+    lists:any(
+        fun(Allowed) ->
+            RegEx = "^" ++ Allowed,
+            RegEx1 = re:replace(RegEx, "\\*", ".*", [{return,list}]),
+            RegEx2 = re:replace(RegEx1, "\\?", ".", [{return,list}]),
+            RegEx3 = [RegEx2|"$"],
+            case re:run(Origin, RegEx3) of
+                nomatch -> false;
+                {match, _} -> true
+            end
+        end, Origins).
