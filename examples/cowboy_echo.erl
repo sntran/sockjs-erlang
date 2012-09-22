@@ -11,6 +11,7 @@
 
 main(_) ->
     Port = 8081,
+    application:start(ranch),
     application:start(sockjs),
     application:start(cowboy),
 
@@ -22,9 +23,8 @@ main(_) ->
     Routes = [{'_',  VhostRoutes}], % any vhost
 
     io:format(" [*] Running at http://localhost:~p~n", [Port]),
-    cowboy:start_listener(http, 100,
-                          cowboy_tcp_transport, [{port,     Port}],
-                          cowboy_http_protocol, [{dispatch, Routes}]),
+    cowboy:start_http(listener, 100, [{port, Port}],
+      [{dispatch, Routes}]),
     receive
         _ -> ok
     end.
@@ -36,7 +36,7 @@ init({_Any, http}, Req, []) ->
 
 handle(Req, State) ->
     {ok, Data} = file:read_file("./examples/echo.html"),
-    {ok, Req1} = cowboy_http_req:reply(200, [{<<"Content-Type">>, "text/html"}],
+    {ok, Req1} = cowboy_req:reply(200, [{<<"Content-Type">>, "text/html"}],
                                        Data, Req),
     {ok, Req1, State}.
 
