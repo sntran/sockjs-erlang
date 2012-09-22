@@ -11,6 +11,7 @@
 
 main(_) ->
     Port = 8081,
+    application:start(ranch),
     application:start(sockjs),
     application:start(cowboy),
 
