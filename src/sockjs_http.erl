@@ -9,7 +9,7 @@
 %% --------------------------------------------------------------------------
 
 -spec path(req()) -> {string(), req()}.
-path({cowboy, Req})       -> {Path, Req1} = cowboy_req:path(Req),
+path({cowboy, Req})       -> {Path, Req1} = cowboy_req:raw_path(Req),
                              {binary_to_list(Path), {cowboy, Req1}}.
 
 -spec method(req()) -> {atom(), req()}.
@@ -31,7 +31,7 @@ body_qs(Req) ->
             body_qs2(Req1)
     end.
 body_qs2({cowboy, Req}) ->
-    {BodyQS, Req1} = cowboy_req:body_qs(Req),
+    {ok, BodyQS, Req1} = cowboy_req:body_qs(Req),
     case proplists:get_value(<<"d">>, BodyQS) of
         undefined ->
             {<<>>, {cowboy, Req1}};

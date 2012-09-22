@@ -39,7 +39,7 @@ init({_Any, http}, Req, []) ->
     {ok, Req, []}.
 
 handle(Req, State) ->
-    {Path, Req1} = cowboy_req:path(Req),
+    {Path, Req1} = cowboy_req:raw_path(Req),
     {ok, Req2} = case Path of
                      [<<"multiplex.js">>] ->
                          {ok, Data} = file:read_file("./examples/multiplex/multiplex.js"),
